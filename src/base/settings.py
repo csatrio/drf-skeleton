@@ -19,7 +19,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_NAME = os.path.dirname(os.path.abspath(__file__)).replace(os.getcwd(), '').replace(os.sep, '').strip()
 
 # Auto generated list of application modules
-APP_MODULES = [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_NAME not in file]
+APP_MODULES = [file for file in os.listdir(os.getcwd()) if
+               '.' not in file and APP_NAME not in file and 'common' not in file]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
