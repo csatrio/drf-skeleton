@@ -33,6 +33,7 @@ for module in settings.APP_MODULES:
     try:
         models = importlib.import_module(f"{module}.models")
         secondary_router = routers.DefaultRouter()
+        # crete view for each and every model
         for model in models.classes:
             view_class = generic_view(model)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
