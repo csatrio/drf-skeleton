@@ -166,8 +166,6 @@ def nested_serializer(_model, related_fields=None):
     for field_name, _type in _model.__dict__.items():
         # if it is a model field
         if type(_type) == DeferredAttribute:
-            field = _model._meta.get_field(field_name)
-            field_type = type(field)
             serializer_fields.append(field_name)
 
         # if it is a related field, create nested serializer
