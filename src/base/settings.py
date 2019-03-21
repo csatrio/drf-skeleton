@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -20,16 +23,16 @@ APP_NAME = os.path.dirname(os.path.abspath(__file__)).replace(os.getcwd(), '').r
 
 # Auto generated list of application modules
 APP_MODULES = [file for file in os.listdir(os.getcwd()) if
-               '.' not in file and APP_NAME not in file and 'common' not in file]
+               '.' not in file and APP_NAME not in file and 'common' not in file] if DEBUG else \
+    [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_NAME not in file
+     and 'test' not in file and 'common' not in file]
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '!9ddfwq@1wa5mbyw&%9tvm%p2n+%l_w_5p5y=km$gvevp(-&uk'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ['localhost']
 
