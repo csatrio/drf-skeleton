@@ -69,20 +69,37 @@ class Pager(pagination.PageNumberPagination):
         ]))
 
 
-class BaseDjangoFilter(rest_framework_filters.FilterSet):
+class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet):
     text_column = ()
     id_column = 'id'
 
     def filter_queryset(self, request, queryset, view):
         req = request.GET
         q = req.get('q')
+        _queryset = None
+
+        ordering_q = req.get('ordering')
+
+        # if it has ordering query, remove that key so it is not processed by next step of the filter
+        if ordering_q:
+            req = request.GET.copy()
+            del req['ordering']
+
         if q is not None:
-            return BaseDjangoFilter.filter_q(queryset, self.text_column, q)
+            _queryset = BaseDjangoFilter.filter_q(queryset, self.text_column, q)
         if req.get(self.id_column) is None:
-            return BaseDjangoFilter.do_filter(req, self.text_column, queryset)
+            _queryset = BaseDjangoFilter.do_filter(req, self.text_column, queryset)
         else:
-            my_filter = queryset.filter(id=req[self.id_column])
-        return my_filter
+            _queryset = queryset.filter(id=req[self.id_column])
+
+        # if it has ordering query, return filtered queryset
+        if ordering_q:
+            fields = [param.strip() for param in ordering_q.split(',')]
+            ordering = self.remove_invalid_fields(_queryset, fields, view, request)
+            if ordering:
+                return _queryset.order_by(*ordering)
+
+        return _queryset
 
     # for any http query that use 'q='
     @staticmethod
@@ -179,7 +196,7 @@ def generic_view(_model):
     filter_meta_class = type(f"{_model.__name__}FilterMeta", (type,), filter_meta_attributes)
     filter_attributes['Meta'] = filter_meta_class
     filter_class = type(f"{_model.__name__}Filter", (BaseDjangoFilter,), filter_attributes)
-    filter_backends = (filters.OrderingFilter, filter_class)
+    filter_backends = (filter_class,)
 
     field_tuples = tuple(serializer_fields)
     view_set_attributes = {
