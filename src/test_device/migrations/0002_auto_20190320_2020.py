@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('test_devices', '0001_initial'),
+        ('test_device', '0001_initial'),
     ]
 
     operations = [
@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('flag', models.CharField(max_length=255)),
                 ('temperature', models.IntegerField()),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('device', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='test_devices.Device')),
+                ('device', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='test_device.Device')),
             ],
             options={
                 'db_table': 'device_report',
@@ -59,6 +59,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='device',
             name='vendor',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.DO_NOTHING, to='test_devices.Vendor'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.DO_NOTHING, to='test_device.Vendor'),
         ),
     ]

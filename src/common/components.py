@@ -7,6 +7,8 @@ from rest_framework import viewsets, generics, serializers, filters, mixins
 from django_filters import rest_framework as rest_framework_filters
 from django.db.models.query_utils import DeferredAttribute
 from django.db.models import CharField, Q
+from django.conf.urls import url as _url
+import os
 
 
 class BaseView(viewsets.ModelViewSet, generics.ListAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
@@ -157,7 +159,15 @@ def generic_view(_model):
         'filter_backends': filter_backends,
         'ordering_fields': field_tuples,
         'filterset_fields': field_tuples,
-        'search_fields': tuple(text_column)
     }
     view_set_class = type(f"{_model.__name__}ViewSet", (BaseView,), view_set_attributes)
     return view_set_class
+
+
+def child_url_resolver(_file):
+    current_folder = os.path.dirname(os.path.abspath(_file)).replace(os.getcwd(), '').replace(os.sep, '').strip()
+
+    def url(*args):
+        return _url(f"{current_folder}/{args[0]}", args[1])
+
+    return url
