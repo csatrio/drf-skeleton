@@ -21,11 +21,15 @@ from rest_framework import routers
 from common.components import generic_view
 import importlib
 
+API_PREFIX = 'api'
+ADMIN_URL = 'api_admin'
+
 router = routers.DefaultRouter()
 secondary_urls = []
 
 # auto append child application module
 for module in settings.APP_MODULES:
+    # append url in every app module
     try:
         models = importlib.import_module(f"{module}.models")
         secondary_router = routers.DefaultRouter()
@@ -33,7 +37,7 @@ for module in settings.APP_MODULES:
             view_class = generic_view(model)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)
-        secondary_urls.append(url(f"^api/{module}/", include(secondary_router.urls)))
+        secondary_urls.append(url(f"^{API_PREFIX}/{module}/", include(secondary_router.urls)))
     except AttributeError:
         pass
 
@@ -49,7 +53,7 @@ for module in settings.APP_MODULES:
         pass
 
 urlpatterns = [
-                  path('api_admin/', admin.site.urls),
-                  url(r'^api/api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-                  url(r'^api/', include(router.urls))
+                  path(f"{ADMIN_URL}/", admin.site.urls),
+                  url(f"^{API_PREFIX}/api-auth/", include('rest_framework.urls', namespace='rest_framework')),
+                  url(f"^{API_PREFIX}/", include(router.urls))
               ] + secondary_urls

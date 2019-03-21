@@ -6,12 +6,18 @@ from collections import OrderedDict
 from rest_framework import viewsets, generics, serializers, filters, mixins
 from django_filters import rest_framework as rest_framework_filters
 from django.db.models.query_utils import DeferredAttribute
-from django.db.models import CharField, Q
+from django.db.models import CharField, ForeignKey, ManyToManyField, Q
 from django.conf.urls import url as _url
+import common.mixins as serializer_mixin
 import os
 
 
 class BaseView(viewsets.ModelViewSet, generics.ListAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
+    pass
+
+
+class BaseSerializer(serializer_mixin.UniqueFieldsMixin, serializer_mixin.NestedCreateMixin,
+                     serializer_mixin.NestedUpdateMixin):
     pass
 
 
@@ -21,12 +27,12 @@ class Pager(pagination.PageNumberPagination):
     max_page_size = 50
     per_page = page_size
 
-    # Untuk dapetin query-per-page dari request
+    # to get query-per-page from request
     def paginate_queryset(self, queryset, request, view=None):
         val = request.GET.get(self.page_size_query_param)
         if val:
             val = int(val)
-            if val != self.per_page and val > 0 and val <= self.max_page_size:
+            if val != self.per_page and 0 < val <= self.max_page_size:
                 self.per_page = val
         return super().paginate_queryset(queryset, request, view)
 
@@ -78,6 +84,7 @@ class BaseDjangoFilter(rest_framework_filters.FilterSet):
             my_filter = queryset.filter(id=req[self.id_column])
         return my_filter
 
+    # for any http query that use 'q='
     @staticmethod
     def filter_q(queryset, search_field, value):
 
@@ -101,6 +108,7 @@ class BaseDjangoFilter(rest_framework_filters.FilterSet):
             queryset = queryset.filter(q_totals)
         return queryset
 
+    # for any http get query, can be used with orm flags
     @staticmethod
     def do_filter(request, params, queryset):
         filter_list = []
@@ -129,22 +137,44 @@ def generic_view(_model):
     text_column = []
     serializer_fields = []
     filter_fields = []
-    serializer_attributes = {'model': _model, 'fields': serializer_fields}
+    serializer_attributes = {}
+    serializer_meta_attributes = {'model': _model, 'fields': serializer_fields}
     filter_attributes = {'text_column': text_column}
     filter_meta_attributes = {'model': _model, 'fields': filter_fields}
 
     for field_name, _type in _model.__dict__.items():
         # if it is a model field
         if type(_type) == DeferredAttribute:
-            field_type = type(_model._meta.get_field(field_name))
+            field = _model._meta.get_field(field_name)
+            field_type = type(field)
             serializer_fields.append(field_name)
             filter_fields.append(field_name)
             if field_type == CharField:
                 text_column.append(field_name)
+            if field_type == ForeignKey:
+                related_model = field.related_model
+                serializer_attributes[field_name] = serializers.PrimaryKeyRelatedField(
+                    read_only=False,
+                    allow_empty=True,
+                    allow_null=True,
+                    required=False,
+                    queryset=related_model.objects.all()
+                )
+            if field_type == ManyToManyField:
+                related_model = field.related_model
+                serializer_attributes[field_name] = serializers.PrimaryKeyRelatedField(
+                    many=True,
+                    read_only=False,
+                    allow_empty=True,
+                    allow_null=True,
+                    required=False,
+                    queryset=related_model.objects.all()
+                )
 
-    serializer_meta_class = type(f"{_model.__name__}SerializerMeta", (type,), serializer_attributes)
-    serializer_class = type(f"{_model.__name__}Serializer", (serializers.ModelSerializer,),
-                            {'Meta': serializer_meta_class})
+    serializer_meta_class = type(f"{_model.__name__}SerializerMeta", (type,), serializer_meta_attributes)
+    serializer_attributes['Meta'] = serializer_meta_class
+    serializer_class = type(f"{_model.__name__}Serializer", (BaseSerializer,),
+                            serializer_attributes)
 
     filter_meta_class = type(f"{_model.__name__}FilterMeta", (type,), filter_meta_attributes)
     filter_attributes['Meta'] = filter_meta_class
