@@ -15,6 +15,9 @@ import os
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# This allow quick development using sqlite
+USE_SQLITE = True
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -28,6 +31,12 @@ APP_MODULES = [file for file in os.listdir(os.getcwd()) if
      and 'test' not in file and 'common' not in file]
 
 
+# Pagination Settings
+PAGE_SIZE = 10
+PAGE_SIZE_QUERY_PARAM = "per_page"
+MAX_PAGE_SIZE = 50
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
@@ -39,8 +48,6 @@ ALLOWED_HOSTS = ['localhost']
 # This allow frontend and backend to run on different port, turn off in production
 CORS_ORIGIN_ALLOW_ALL = True if DEBUG else False
 
-# This allow quick development using sqlite
-USE_SQLITE = True
 
 # Application definition
 INSTALLED_APPS = [

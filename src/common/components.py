@@ -1,6 +1,5 @@
-import itertools
-
 import os
+import itertools
 import common.reflections as reflections
 import common.mixins as serializer_mixin
 from rest_framework import pagination
@@ -10,6 +9,7 @@ from rest_framework import viewsets, generics, filters, mixins
 from django_filters import rest_framework as rest_framework_filters
 from django.db.models.query_utils import DeferredAttribute
 from django.db.models import CharField, ForeignKey, ManyToManyField, Q
+from django.conf import settings
 from django.conf.urls import url as _url
 from django.core.exceptions import FieldDoesNotExist
 import django.db.models.fields.related_descriptors as related_descriptors
@@ -27,9 +27,9 @@ class BaseSerializer(serializer_mixin.UniqueFieldsMixin, serializer_mixin.Nested
 
 
 class Pager(pagination.PageNumberPagination):
-    page_size = 5
-    page_size_query_param = "per_page"
-    max_page_size = 50
+    page_size = settings.PAGE_SIZE
+    page_size_query_param = settings.PAGE_SIZE_QUERY_PARAM
+    max_page_size = settings.MAX_PAGE_SIZE
     per_page = page_size
 
     # to get query-per-page from request
@@ -79,16 +79,13 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
     id_column = 'id'
 
     def filter_queryset(self, request, queryset, view):
-        req = request.GET
+        req = request.GET.copy()
         q = req.get('q')
         _queryset = None
-
         ordering_q = req.get('ordering')
 
-        # if it has ordering query, remove that key so it is not processed by next step of the filter
-        if ordering_q:
-            req = request.GET.copy()
-            del req['ordering']
+        # if it has these keys, remove it so it will not processed by next step of the filter
+        BaseDjangoFilter.delete_key_if_exists(req, 'ordering', 'page', settings.PAGE_SIZE_QUERY_PARAM)
 
         if q is not None:
             _queryset = BaseDjangoFilter.filter_q(queryset, self.text_column, q)
@@ -148,6 +145,12 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
                 filter_list.append(queryset.filter(**filter_key))
 
         return filter_list[-1] if len(filter_list) else queryset.filter()
+
+    @staticmethod
+    def delete_key_if_exists(req, *args):
+        for key in args:
+            if req.get(key):
+                del req[key]
 
 
 def get_model_fields(_model):
