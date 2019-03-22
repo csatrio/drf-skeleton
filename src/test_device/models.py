@@ -23,7 +23,7 @@ class Device(BaseModel):
 
     name = models.CharField(max_length=255)
     password = models.CharField(max_length=255, default='1234')
-    vendor = models.ForeignKey(Vendor, on_delete=models.DO_NOTHING)
+    vendor = models.ForeignKey(Vendor, on_delete=models.DO_NOTHING, null=True)
     #vendor = models.ManyToManyField(Vendor)
     location = models.CharField(max_length=255, blank=True)
     lat = models.DecimalField(max_digits=50, decimal_places=20, default=0, blank=True)

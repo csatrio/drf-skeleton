@@ -1,11 +1,14 @@
 import os
 import itertools
+
+from rest_framework.utils.serializer_helpers import NestedBoundField, BoundField
+
 import common.reflections as reflections
 import common.mixins as serializer_mixin
 from rest_framework import pagination
 from rest_framework.response import Response
 from collections import OrderedDict
-from rest_framework import viewsets, generics, filters, mixins
+from rest_framework import viewsets, generics, filters, mixins, serializers
 from django_filters import rest_framework as rest_framework_filters
 from django.db.models.query_utils import DeferredAttribute
 from django.db.models import CharField, ForeignKey, ManyToManyField, Q
@@ -23,6 +26,15 @@ class BaseView(viewsets.ModelViewSet, generics.ListAPIView, mixins.UpdateModelMi
 
 class BaseSerializer(serializer_mixin.UniqueFieldsMixin, serializer_mixin.NestedCreateMixin,
                      serializer_mixin.NestedUpdateMixin):
+
+    def __getitem__(self, key):
+        field = self.fields[key]
+        value = self.data.get(key)
+        error = self.errors.get(key) if hasattr(self, '_errors') else None
+        if isinstance(field, serializers.Serializer):
+            return NestedBoundField(field, value, field.data)
+        return BoundField(field, value, error)
+
     pass
 
 
@@ -85,7 +97,7 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
         ordering_q = req.get('ordering')
 
         # if it has these keys, remove it so it will not processed by next step of the filter
-        BaseDjangoFilter.delete_key_if_exists(req, 'ordering', 'page', settings.PAGE_SIZE_QUERY_PARAM)
+        BaseDjangoFilter.delete_key_if_exists(req, 'ordering', 'page', 'format', settings.PAGE_SIZE_QUERY_PARAM)
 
         if q is not None:
             _queryset = BaseDjangoFilter.filter_q(queryset, self.text_column, q)
@@ -156,12 +168,25 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
 def nested_serializer(_model, related_fields=None):
     serializer_fields = []
     serializer_attributes = {}
-    serializer_meta_attributes = {'model': _model, 'fields': serializer_fields}
+    serializer_meta_attributes = {'model': _model, 'fields': serializer_fields, 'validators': []}
 
     for field_name, _type in _model.__dict__.items():
+        # if it is a primary key field
+        if field_name == 'id':
+            continue
+            # serializer_attributes[field_name] = serializers.IntegerField(required=False)
+
         # if it is a model field
         if type(_type) == DeferredAttribute:
             serializer_fields.append(field_name)
+            field = _model._meta.get_field(field_name)
+            field_type = type(field)
+            if field_type == ForeignKey:
+                related_model = field.related_model
+                related_fields.add(field.name)
+                serializer_attributes[field_name] = \
+                    serializers.PrimaryKeyRelatedField(required=False, queryset=related_model.objects.all(),
+                                                       allow_null=True)
 
         # if it is a related field, create nested serializer
         elif type(_type) in RELATED_FIELD_CLASS:
@@ -171,11 +196,13 @@ def nested_serializer(_model, related_fields=None):
                 serializer_fields.append(field_name)
                 related_model = field.related_model
                 if related_fields:
-                    related_fields.append(f"{_model.__name__.lower()}__{field.name}")
+                    related_fields.add(f"{_model.__name__.lower()}__{field.name}")
                 if field_type == ForeignKey:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)()
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(
+                        allow_null=True, read_only=True)
                 if field_type == ManyToManyField:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True)
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True,
+                                                                                                         read_only=True)
             except FieldDoesNotExist:
                 pass
 
@@ -190,14 +217,18 @@ def generic_view(_model):
     text_column = []
     serializer_fields = []
     filter_fields = []
-    related_fields = []
+    related_fields = set()
     serializer_attributes = {}
-    serializer_meta_attributes = {'model': _model, 'fields': serializer_fields}
+    serializer_meta_attributes = {'model': _model, 'fields': serializer_fields, 'validators': []}
     filter_attributes = {'text_column': text_column}
     filter_meta_attributes = {'model': _model, 'fields': filter_fields}
 
     for field_name, _type in _model.__dict__.items():
-        # if it is a model field
+        # if it is a primary key field
+        if field_name == 'id':
+            serializer_attributes[field_name] = serializers.IntegerField(required=False)
+
+        # model field that is directly inside one table
         if type(_type) == DeferredAttribute:
             field = _model._meta.get_field(field_name)
             field_type = type(field)
@@ -207,18 +238,27 @@ def generic_view(_model):
             if field_type == CharField:
                 text_column.append(field_name)
 
-        # if it is a related field, create nested serializer
+            if field_type == ForeignKey:
+                related_model = field.related_model
+                related_fields.add(field.name)
+                serializer_attributes[field_name] = \
+                    serializers.PrimaryKeyRelatedField(required=False, queryset=related_model.objects.all(),
+                                                       allow_null=True)
+
+        # if it is a related field on another table, create nested serializer
         elif type(_type) in RELATED_FIELD_CLASS:
             try:
                 field = _model._meta.get_field(field_name)
                 field_type = type(field)
                 serializer_fields.append(field_name)
                 related_model = field.related_model
-                related_fields.append(field.name)
+                related_fields.add(field.name)
                 if field_type == ForeignKey:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)()
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(
+                        allow_null=True, read_only=True)
                 if field_type == ManyToManyField:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True)
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True,
+                                                                                                         read_only=True)
             except FieldDoesNotExist:
                 pass
 
@@ -235,11 +275,11 @@ def generic_view(_model):
     filter_backends = (filter_class,)
 
     field_tuples = tuple(serializer_fields)
-
     qs = _model.objects.all()
 
     # optimize prefetch for related fields
-    qs = qs.prefetch_related(*related_fields)
+    if len(related_fields) > 0:
+        qs = qs.prefetch_related(*related_fields)
 
     view_set_attributes = {
         'queryset': qs,
