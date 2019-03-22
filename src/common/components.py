@@ -153,11 +153,6 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
                 del req[key]
 
 
-def get_model_fields(_model):
-    return tuple(field_name for field_name, _type in _model.__dict__.items() if
-                 type(_type) == DeferredAttribute and 'id' not in field_name)
-
-
 def nested_serializer(_model, related_fields=None):
     serializer_fields = []
     serializer_attributes = {}

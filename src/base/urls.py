@@ -35,6 +35,11 @@ for module in settings.APP_MODULES:
         secondary_router = routers.DefaultRouter()
         # crete view for each and every model
         for model in models.classes:
+            try:
+                if not getattr(model, 'is_automatic'):
+                    continue
+            except AttributeError:
+                pass
             view_class = generic_view(model)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)

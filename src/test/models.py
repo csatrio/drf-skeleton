@@ -4,6 +4,7 @@ from common.models import BaseModel
 
 
 # Create your models here.
+# Add attribute is_automatic = False if you don't want to auto create admin and endpoint
 
 class Person(BaseModel):
     class Meta:
