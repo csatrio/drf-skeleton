@@ -51,4 +51,4 @@ class DetilSewa(BaseModel):
     jumlah = models.IntegerField(default=0)
 
 
-classes = reflections.get_class(__name__)
+classes = reflections.get_classes(__name__)

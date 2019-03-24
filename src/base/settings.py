@@ -18,6 +18,12 @@ DEBUG = True
 # This allow quick development using sqlite
 USE_SQLITE = True
 
+# Prefix of your API, e.g /api
+API_PREFIX = 'api'
+
+# Path of your API admin, e.g. api_admin
+ADMIN_URL = 'api_admin'
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,6 +35,9 @@ APP_MODULES = [file for file in os.listdir(os.getcwd()) if
                '.' not in file and APP_NAME not in file and 'common' not in file] if DEBUG else \
     [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_NAME not in file
      and 'test' not in file and 'common' not in file]
+
+# Store classes created by reflection, avoid high overhead by repeated reflection call
+CLASS_CACHE = {}
 
 
 # Pagination Settings

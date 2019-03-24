@@ -2,9 +2,22 @@ import sys
 import inspect
 from django.contrib import admin
 from django.db.models.query_utils import DeferredAttribute
+from django.conf import settings
 
 
-def get_class(_name):
+def create_class(_name: str, _superclasses: tuple, _attributes: dict):
+    _class = settings.CLASS_CACHE.get(_name)
+    if _class is None:
+        _class = type(_name, _superclasses, _attributes)
+        settings.CLASS_CACHE[_name] = _class
+    return _class
+
+
+def get_cached_class(_name: str):
+    return settings.CLASS_CACHE.get(_name)
+
+
+def get_classes(_name):
     return [obj for name, obj in inspect.getmembers(sys.modules[_name], inspect.isclass)
             if obj.__module__ is _name]
 

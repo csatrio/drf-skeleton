@@ -17,7 +17,7 @@ from django.conf.urls import url as _url
 from django.core.exceptions import FieldDoesNotExist
 import django.db.models.fields.related_descriptors as related_descriptors
 
-RELATED_FIELD_CLASS = reflections.get_class(related_descriptors.__name__)
+RELATED_FIELD_CLASS = reflections.get_classes(related_descriptors.__name__)
 
 
 class BaseView(viewsets.ModelViewSet, generics.ListAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
@@ -164,6 +164,11 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
 
 
 def nested_serializer(_model, related_fields=None):
+    serializer_class_name = f"{_model.__name__}Serializer"
+    cached_class = reflections.get_cached_class(serializer_class_name)
+    if cached_class:
+        return cached_class
+
     serializer_fields = []
     serializer_attributes = {}
     serializer_meta_attributes = {'model': _model, 'fields': serializer_fields, 'validators': []}
@@ -176,13 +181,6 @@ def nested_serializer(_model, related_fields=None):
         # if it is a model field
         if type(_type) == DeferredAttribute:
             serializer_fields.append(field_name)
-            # field = _model._meta.get_field(field_name)
-            # field_type = type(field)
-            # if field_type == ForeignKey:
-            #     related_model = field.related_model
-            #     serializer_attributes[field_name] = \
-            #         serializers.PrimaryKeyRelatedField(required=False, queryset=related_model.objects.all(),
-            #                                            allow_null=True)
 
         # if it is a related field, create nested serializer
         elif type(_type) in RELATED_FIELD_CLASS:
@@ -205,14 +203,20 @@ def nested_serializer(_model, related_fields=None):
             except FieldDoesNotExist:
                 pass
 
-    serializer_meta_class = type(f"{_model.__name__}SerializerMeta", (type,), serializer_meta_attributes)
+    serializer_meta_class = reflections.create_class(f"{_model.__name__}SerializerMeta", (type,),
+                                                     serializer_meta_attributes)
     serializer_attributes['Meta'] = serializer_meta_class
-    serializer_class = type(f"{_model.__name__}Serializer", (BaseSerializer,),
-                            serializer_attributes)
+    serializer_class = reflections.create_class(serializer_class_name, (BaseSerializer,),
+                                                serializer_attributes)
     return serializer_class
 
 
 def generic_view(_model):
+    view_set_class_name = f"{_model.__name__}ViewSet"
+    cached_class = reflections.get_cached_class(view_set_class_name)
+    if cached_class:
+        return cached_class
+
     text_column = []
     serializer_fields = []
     filter_fields = []
@@ -237,13 +241,6 @@ def generic_view(_model):
             if field_type == CharField:
                 text_column.append(field_name)
 
-            # if field_type == ForeignKey:
-            #     related_model = field.related_model
-            #     related_fields.add(field.name)
-            #     serializer_attributes[field_name] = \
-            #         serializers.PrimaryKeyRelatedField(required=False, queryset=related_model.objects.all(),
-            #                                            allow_null=True)
-
         # if it is a related field on another table, create nested serializer
         elif type(_type) in RELATED_FIELD_CLASS:
             try:
@@ -256,20 +253,22 @@ def generic_view(_model):
                     serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(
                         allow_null=True, read_only=True)
                 if field_type == ManyToManyField:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True, read_only=True)
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True,
+                                                                                                         read_only=True)
             except FieldDoesNotExist:
                 pass
 
     # auto create serializer class using reflection
-    serializer_meta_class = type(f"{_model.__name__}SerializerMeta", (type,), serializer_meta_attributes)
+    serializer_meta_class = reflections.create_class(f"{_model.__name__}SerializerMeta", (type,),
+                                                     serializer_meta_attributes)
     serializer_attributes['Meta'] = serializer_meta_class
-    serializer_class = type(f"{_model.__name__}Serializer", (BaseSerializer,),
-                            serializer_attributes)
+    serializer_class = reflections.create_class(f"{_model.__name__}Serializer", (BaseSerializer,),
+                                                serializer_attributes)
 
     # auto create filter class using reflection
-    filter_meta_class = type(f"{_model.__name__}FilterMeta", (type,), filter_meta_attributes)
+    filter_meta_class = reflections.create_class(f"{_model.__name__}FilterMeta", (type,), filter_meta_attributes)
     filter_attributes['Meta'] = filter_meta_class
-    filter_class = type(f"{_model.__name__}Filter", (BaseDjangoFilter,), filter_attributes)
+    filter_class = reflections.create_class(f"{_model.__name__}Filter", (BaseDjangoFilter,), filter_attributes)
     filter_backends = (filter_class,)
 
     field_tuples = tuple(serializer_fields)
@@ -287,7 +286,7 @@ def generic_view(_model):
         'ordering_fields': field_tuples,
         'filterset_fields': field_tuples,
     }
-    view_set_class = type(f"{_model.__name__}ViewSet", (BaseView,), view_set_attributes)
+    view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes)
     return view_set_class
 
 

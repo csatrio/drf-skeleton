@@ -21,8 +21,8 @@ from rest_framework import routers
 from common.components import generic_view
 import importlib
 
-API_PREFIX = 'api'
-ADMIN_URL = 'api_admin'
+API_PREFIX = settings.API_PREFIX
+ADMIN_URL = settings.ADMIN_URL
 
 router = routers.DefaultRouter()
 secondary_urls = []
