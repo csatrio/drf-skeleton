@@ -282,8 +282,7 @@ def generic_view(_model):
         'ordering_fields': field_tuples,
         'filterset_fields': field_tuples,
     }
-    view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes, rq=related_fields,
-                                              _model=_model)
+    view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes)
     return view_set_class
 
 
