@@ -19,6 +19,7 @@ from django.conf.urls import url, include
 from django.conf import settings
 from rest_framework import routers
 from common.components import generic_view
+import common.reflections as reflections
 import importlib
 
 API_PREFIX = settings.API_PREFIX
@@ -33,14 +34,14 @@ for module in settings.APP_MODULES:
     try:
         models = importlib.import_module(f"{module}.models")
         secondary_router = routers.DefaultRouter()
-        # crete view for each and every model
+        # create view for each and every model
         for model in models.classes:
             try:
                 if not getattr(model, 'is_automatic'):
                     continue
             except AttributeError:
                 pass
-            view_class = generic_view(model)
+            view_class = generic_view(model, module_name=module)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)
         secondary_urls.append(url(f"^{API_PREFIX}/{module}/", include(secondary_router.urls)))
@@ -57,6 +58,8 @@ for module in settings.APP_MODULES:
             pass
     except ModuleNotFoundError:
         pass
+
+reflections.dumper.close()
 
 urlpatterns = [
                   path(f"{ADMIN_URL}/", admin.site.urls),

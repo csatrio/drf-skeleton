@@ -163,7 +163,7 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
                 del req[key]
 
 
-def nested_serializer(_model, related_fields=None):
+def nested_serializer(_model, related_fields=None, module_name=None):
     serializer_class_name = f"{_model.__name__}Serializer"
     serializer_fields = []
     serializer_attributes = {}
@@ -189,25 +189,26 @@ def nested_serializer(_model, related_fields=None):
                 if field_type == ForeignKey:
                     if related_fields:
                         related_fields.add(f"{_model.__name__.lower()}__{field.name}")
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields, module_name=module_name)(
                         allow_null=True, read_only=True)
                 if field_type == ManyToManyField:
                     if related_fields:
                         related_fields.add(f"{_model.__name__.lower()}__{field.name}")
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True,
+                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields, module_name=module_name)(many=True,
                                                                                                          read_only=True)
             except FieldDoesNotExist:
                 pass
 
     serializer_meta_class = reflections.create_class(f"{_model.__name__}SerializerMeta", (type,),
-                                                     serializer_meta_attributes)
+                                                     serializer_meta_attributes, module_name=module_name)
     serializer_attributes['Meta'] = serializer_meta_class
+    print(serializer_attributes)
     serializer_class = reflections.create_class(serializer_class_name, (BaseSerializer,),
-                                                serializer_attributes)
+                                                serializer_attributes, module_name=module_name)
     return serializer_class
 
 
-def generic_view(_model):
+def generic_view(_model, module_name=None):
     view_set_class_name = f"{_model.__name__}ViewSet"
     cached_class = reflections.get_cached_class(view_set_class_name)
     if cached_class:
@@ -246,25 +247,28 @@ def generic_view(_model):
                 related_model = field.related_model
                 related_fields.add(field.name)
                 if field_type == ForeignKey:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(
-                        allow_null=True, read_only=True)
+                    serializer_attributes[field_name] = nested_serializer\
+                        (related_model, related_fields,
+                         module_name=module_name)(allow_null=True, read_only=True)
                 if field_type == ManyToManyField:
-                    serializer_attributes[field_name] = nested_serializer(related_model, related_fields)(many=True,
-                                                                                                         read_only=True)
+                    serializer_attributes[field_name] = nested_serializer\
+                        (related_model, related_fields, module_name=module_name)(many=True, read_only=True)
             except FieldDoesNotExist:
                 pass
 
     # auto create serializer class using reflection
     serializer_meta_class = reflections.create_class(f"{_model.__name__}SerializerMeta", (type,),
-                                                     serializer_meta_attributes)
+                                                     serializer_meta_attributes, module_name=module_name)
     serializer_attributes['Meta'] = serializer_meta_class
     serializer_class = reflections.create_class(f"{_model.__name__}Serializer", (BaseSerializer,),
-                                                serializer_attributes)
+                                                serializer_attributes, module_name=module_name)
 
     # auto create filter class using reflection
-    filter_meta_class = reflections.create_class(f"{_model.__name__}FilterMeta", (type,), filter_meta_attributes)
+    filter_meta_class = reflections.create_class(f"{_model.__name__}FilterMeta", (type,), filter_meta_attributes,
+                                                 module_name=module_name)
     filter_attributes['Meta'] = filter_meta_class
-    filter_class = reflections.create_class(f"{_model.__name__}Filter", (BaseDjangoFilter,), filter_attributes)
+    filter_class = reflections.create_class(f"{_model.__name__}Filter", (BaseDjangoFilter,), filter_attributes,
+                                            module_name=module_name)
     filter_backends = (filter_class,)
 
     field_tuples = tuple(serializer_fields)
@@ -283,7 +287,7 @@ def generic_view(_model):
         'filterset_fields': field_tuples,
     }
     view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes, rq=related_fields,
-                                              _model=_model)
+                                              _model=_model, module_name=module_name)
     return view_set_class
 
 
