@@ -165,9 +165,9 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
 
 def nested_serializer(_model, related_fields=None):
     serializer_class_name = f"{_model.__name__}Serializer"
-    cached_class = reflections.get_cached_class(serializer_class_name)
-    if cached_class:
-        return cached_class
+    # cached_class = reflections.get_cached_class(serializer_class_name)
+    # if cached_class:
+    #     return cached_class
 
     serializer_fields = []
     serializer_attributes = {}
