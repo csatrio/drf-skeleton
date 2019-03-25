@@ -165,10 +165,6 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
 
 def nested_serializer(_model, related_fields=None):
     serializer_class_name = f"{_model.__name__}Serializer"
-    # cached_class = reflections.get_cached_class(serializer_class_name)
-    # if cached_class:
-    #     return cached_class
-
     serializer_fields = []
     serializer_attributes = {}
     serializer_meta_attributes = {'model': _model, 'fields': serializer_fields, 'validators': []}
@@ -286,7 +282,8 @@ def generic_view(_model):
         'ordering_fields': field_tuples,
         'filterset_fields': field_tuples,
     }
-    view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes)
+    view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes, rq=related_fields,
+                                              _model=_model)
     return view_set_class
 
 
