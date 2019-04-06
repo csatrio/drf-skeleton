@@ -1,5 +1,4 @@
 from django.db import models
-from common import reflections
 from common.models import BaseModel
 
 
@@ -49,6 +48,3 @@ class DetilSewa(BaseModel):
     sewa = models.ForeignKey(Sewa, on_delete=models.DO_NOTHING)
     buku = models.ForeignKey(Buku, on_delete=models.DO_NOTHING)
     jumlah = models.IntegerField(default=0)
-
-
-classes = reflections.get_classes(__name__)

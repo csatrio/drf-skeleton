@@ -27,12 +27,6 @@ def get_model_fields(_model):
                  type(_type) == DeferredAttribute and 'id' not in field_name)
 
 
-def auto_register_model_admin(classes):
-    for model in classes:
-        try:
-            if not getattr(model, 'is_automatic'):
-                continue
-        except AttributeError:
-            pass
-        model_admin = type(f"{model.__name__}Admin", (admin.ModelAdmin,), {'list_display': get_model_fields(model)})
-        admin.site.register(model, model_admin)
+def register_model_admin(model):
+    model_admin = type(f"{model.__name__}Admin", (admin.ModelAdmin,), {'list_display': get_model_fields(model)})
+    admin.site.register(model, model_admin)

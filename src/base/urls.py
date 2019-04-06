@@ -19,6 +19,7 @@ from django.conf.urls import url, include
 from django.conf import settings
 from rest_framework import routers
 from common.components import generic_view
+import common.reflections as reflections
 import importlib
 
 API_PREFIX = settings.API_PREFIX
@@ -32,9 +33,10 @@ for module in settings.APP_MODULES:
     # append url in every app module
     try:
         models = importlib.import_module(f"{module}.models")
+        model_classes = reflections.get_classes(models.__name__)
         secondary_router = routers.DefaultRouter()
-        # crete view for each and every model
-        for model in models.classes:
+        # create view for each and every model
+        for model in model_classes:
             try:
                 if not getattr(model, 'is_automatic'):
                     continue
@@ -43,6 +45,8 @@ for module in settings.APP_MODULES:
             view_class = generic_view(model)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)
+            # create admin entry for each model
+            reflections.register_model_admin(model)
         secondary_urls.append(url(f"^{API_PREFIX}/{module}/", include(secondary_router.urls)))
     except AttributeError:
         pass

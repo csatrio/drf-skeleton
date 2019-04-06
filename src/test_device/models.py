@@ -1,5 +1,4 @@
 from django.db import models
-from common import reflections
 from common.models import BaseModel
 
 
@@ -47,6 +46,3 @@ class DeviceReport(models.Model):
 
     def __str__(self):
         return self.device.name
-
-
-classes = reflections.get_classes(__name__)

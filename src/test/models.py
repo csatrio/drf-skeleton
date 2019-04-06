@@ -1,5 +1,4 @@
 from django.db import models
-from common import reflections
 from common.models import BaseModel
 
 
@@ -13,6 +12,3 @@ class Person(BaseModel):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     age = models.IntegerField(default=0)
-
-
-classes = reflections.get_classes(__name__)

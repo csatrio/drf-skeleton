@@ -95,11 +95,11 @@ class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet)
         ordering_q = req.get('ordering')
 
         # if it has these keys, remove it so it will not processed by next step of the filter
-        BaseDjangoFilter.delete_key_if_exists(req, 'ordering', 'page', 'format', settings.PAGE_SIZE_QUERY_PARAM)
+        BaseDjangoFilter.delete_key_if_exists(req, 'q', 'ordering', 'page', 'format', settings.PAGE_SIZE_QUERY_PARAM)
 
         if q is not None:
             _queryset = BaseDjangoFilter.filter_q(queryset, self.text_column, q)
-        if req.get(self.id_column) is None:
+        elif req.get(self.id_column) is None:
             _queryset = BaseDjangoFilter.do_filter(req, self.text_column, queryset)
         else:
             _queryset = queryset.filter(id=req[self.id_column])
