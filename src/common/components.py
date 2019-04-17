@@ -80,7 +80,7 @@ class Pager(pagination.PageNumberPagination):
             ('prev_page_url', self.get_previous_link()),
             ('from', start_from),
             ('to', end_at),
-            ('data', data)
+            ('rows', data)
         ]))
 
 
