@@ -171,8 +171,8 @@ def nested_serializer(_model, related_fields=None):
 
     for field_name, _type in _model.__dict__.items():
         # if it is a primary key field
-        if field_name == 'id':
-            continue
+        # if field_name == 'id':
+        #     continue
 
         # if it is a model field
         if type(_type) == DeferredAttribute:

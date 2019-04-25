@@ -1,6 +1,7 @@
+from django.db import transaction
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+import json
 from .models import *
 
 
@@ -22,3 +23,18 @@ def get_sewa_detail(request):
         'penerbit': detilsewa.buku.penerbit,
         'jumlah': detilsewa.jumlah
     } for detilsewa in queryset])
+
+
+@api_view(['POST'])
+@transaction.atomic
+def save_sewa(request):
+    body = json.loads(request.body)
+    sewa = Sewa(anggota_id=body['anggota']['id'], tanggal_pinjam=body['tanggalPinjam'],
+                tanggal_kembali=body['tanggalKembali'])
+    sewa.save()
+
+    for _buku in body['buku']:
+        detilsewa = DetilSewa(buku_id=_buku['id'], sewa=sewa, jumlah=_buku['jumlahPinjam'])
+        detilsewa.save()
+
+    return Response({'result': 'ok'})
