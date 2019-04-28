@@ -21,20 +21,27 @@ def get_sewa_detail(request):
         'anggota': detilsewa.sewa.anggota.nama,
         'buku': detilsewa.buku.nama,
         'penerbit': detilsewa.buku.penerbit,
-        'jumlah': detilsewa.jumlah
+        'tanggal_terbit': detilsewa.buku.tanggal_terbit,
+        'jumlahPinjam': detilsewa.jumlah,
+        'id': detilsewa.buku.id,
+        'id_detilsewa': detilsewa.id
     } for detilsewa in queryset])
 
 
 @api_view(['POST'])
-@transaction.atomic
 def save_sewa(request):
     body = json.loads(request.body)
-    sewa = Sewa(anggota_id=body['anggota']['id'], tanggal_pinjam=body['tanggalPinjam'],
-                tanggal_kembali=body['tanggalKembali'])
-    sewa.save()
 
-    for _buku in body['buku']:
-        detilsewa = DetilSewa(buku_id=_buku['id'], sewa=sewa, jumlah=_buku['jumlahPinjam'])
-        detilsewa.save()
+    with transaction.atomic():
+        sewa = Sewa.objects.update_or_create(anggota_id=body['anggota']['id'], tanggal_pinjam=body['tanggalPinjam'],
+                                             tanggal_kembali=body['tanggalKembali'])
+        for _buku in body['buku']:
+            id_detilsewa = _buku.get('id_detilsewa')
+            if id_detilsewa:
+                detil = DetilSewa.objects.get(id=id_detilsewa)
+                detil.jumlah = _buku['jumlahPinjam']
+                detil.save()
+            else:
+                DetilSewa.objects.update_or_create(buku_id=_buku.get('id'), sewa_id=sewa[0].id, jumlah=_buku['jumlahPinjam'])
 
     return Response({'result': 'ok'})

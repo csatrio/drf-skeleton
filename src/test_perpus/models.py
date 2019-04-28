@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from common.models import BaseModel
 
 
@@ -36,6 +36,13 @@ class Sewa(BaseModel):
     anggota = models.ForeignKey(Anggota, on_delete=models.DO_NOTHING)
     tanggal_pinjam = models.DateField()
     tanggal_kembali = models.DateField()
+
+    def delete(self, using=None, keep_parents=False):
+        with transaction.atomic():
+            for detilsewa in self.detilsewa_set.all():
+                print(detilsewa)
+                detilsewa.delete()
+        super(Sewa, self).delete()
 
     def __str__(self):
         return self.anggota.nama
