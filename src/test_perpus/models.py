@@ -40,7 +40,6 @@ class Sewa(BaseModel):
     def delete(self, using=None, keep_parents=False):
         with transaction.atomic():
             for detilsewa in self.detilsewa_set.all():
-                print(detilsewa)
                 detilsewa.delete()
         super(Sewa, self).delete()
 

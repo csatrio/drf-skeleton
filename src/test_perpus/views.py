@@ -18,7 +18,7 @@ def get_sewa_detail(request):
 
     return Response([{
         'anggota': detilsewa.sewa.anggota.nama,
-        'buku': detilsewa.buku.nama,
+        'judul': detilsewa.buku.nama,
         'penerbit': detilsewa.buku.penerbit,
         'tanggal_terbit': detilsewa.buku.tanggal_terbit,
         'jumlahPinjam': detilsewa.jumlah,
