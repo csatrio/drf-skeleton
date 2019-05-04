@@ -21,6 +21,7 @@ from rest_framework import routers
 from common.components import generic_view
 from rest_framework_simplejwt import views as jwt_views
 import common.reflections as reflections
+import common.jwt as jwt
 import importlib
 
 API_PREFIX = settings.API_PREFIX
@@ -65,7 +66,7 @@ for module in settings.APP_MODULES:
 
 urlpatterns = [
                   path(f"{ADMIN_URL}/", admin.site.urls),
-                  path(f"{API_PREFIX}/token/", jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+                  path(f"{API_PREFIX}/token/", jwt.CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
                   path(f"{API_PREFIX}/token/refresh/", jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
                   url(f"^{API_PREFIX}/api-auth/", include('rest_framework.urls', namespace='rest_framework')),
                   url(f"^{API_PREFIX}/", include(router.urls))
