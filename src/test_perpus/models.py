@@ -17,10 +17,18 @@ class Anggota(BaseModel):
         return self.nama
 
 
+class Kategori(BaseModel):
+    class Meta:
+        db_table = 'kategori'
+
+    nama_kategori = models.CharField(max_length=255)
+
+
 class Buku(BaseModel):
     class Meta:
         db_table = 'buku'
 
+    kategori = models.ForeignKey(Kategori, on_delete=models.DO_NOTHING, default=-1)
     nama = models.CharField(max_length=255)
     penerbit = models.CharField(max_length=255)
     tanggal_terbit = models.DateField()
