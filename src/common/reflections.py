@@ -1,8 +1,9 @@
-import sys
 import inspect
+import sys
+
+from django.conf import settings
 from django.contrib import admin
 from django.db.models.query_utils import DeferredAttribute
-from django.conf import settings
 
 
 def create_class(_name: str, _superclasses: tuple, _attributes: dict):

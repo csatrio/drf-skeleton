@@ -1,21 +1,21 @@
-import os
 import itertools
-
-from rest_framework.utils.serializer_helpers import NestedBoundField, BoundField
-
-import common.reflections as reflections
-import common.mixins as serializer_mixin
-from rest_framework import pagination
-from rest_framework.response import Response
+import os
 from collections import OrderedDict
-from rest_framework import viewsets, generics, filters, mixins, serializers
-from django_filters import rest_framework as rest_framework_filters
-from django.db.models.query_utils import DeferredAttribute
-from django.db.models import CharField, ForeignKey, ManyToManyField, Q
+
+import django.db.models.fields.related_descriptors as related_descriptors
 from django.conf import settings
 from django.conf.urls import url as _url
 from django.core.exceptions import FieldDoesNotExist
-import django.db.models.fields.related_descriptors as related_descriptors
+from django.db.models import CharField, ForeignKey, ManyToManyField, Q
+from django.db.models.query_utils import DeferredAttribute
+from django_filters import rest_framework as rest_framework_filters
+from rest_framework import pagination
+from rest_framework import viewsets, generics, filters, mixins, serializers
+from rest_framework.response import Response
+from rest_framework.utils.serializer_helpers import NestedBoundField, BoundField
+
+import common.mixins as serializer_mixin
+import common.reflections as reflections
 
 RELATED_FIELD_CLASS = reflections.get_classes(related_descriptors.__name__)
 

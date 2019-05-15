@@ -13,16 +13,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import importlib
+
+from django.conf import settings
+from django.conf.urls import url, include
 from django.contrib import admin
 from django.urls import path
-from django.conf.urls import url, include
-from django.conf import settings
 from rest_framework import routers
-from common.components import generic_view
 from rest_framework_simplejwt import views as jwt_views
-import common.reflections as reflections
+
 import common.jwt as jwt
-import importlib
+import common.reflections as reflections
+from common.components import generic_view
 
 API_PREFIX = settings.API_PREFIX
 ADMIN_URL = settings.ADMIN_URL
