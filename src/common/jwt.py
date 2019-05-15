@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
-        token = super().get_token(user)
+        token = super(CustomTokenObtainPairSerializer, cls).get_token(user)
         # Add custom claims
         token['user'] = user.username
         # ...
