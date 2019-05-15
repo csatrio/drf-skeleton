@@ -33,19 +33,20 @@ APP_NAME = os.path.dirname(os.path.abspath(__file__)).replace(os.getcwd(), '').r
 
 # Auto generated list of application modules
 APP_MODULES = [file for file in os.listdir(os.getcwd()) if
-               '.' not in file and APP_NAME not in file and 'common' not in file] if DEBUG else \
+               '.' not in file and APP_NAME not in file and 'common' and 'users' not in file] if DEBUG else \
     [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_NAME not in file
      and 'test' not in file and 'common' not in file]
 
 # Store classes created by reflection, avoid high overhead by repeated reflection call
 CLASS_CACHE = {}
 
+# User settings
+AUTH_USER_MODEL = 'users.User'
 
 # Pagination Settings
 PAGE_SIZE = 10
 PAGE_SIZE_QUERY_PARAM = "per_page"
 MAX_PAGE_SIZE = 50
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
@@ -58,7 +59,6 @@ ALLOWED_HOSTS = ['localhost']
 # This allow frontend and backend to run on different port, turn off in production
 CORS_ORIGIN_ALLOW_ALL = True if DEBUG else False
 
-
 # Application definition
 INSTALLED_APPS = [
                      'django.contrib.admin',
@@ -70,6 +70,7 @@ INSTALLED_APPS = [
                      'django.contrib.humanize',
                      'rest_framework',
                      'django_filters',
+                     'users',
                  ] + [module for module in APP_MODULES]
 
 MIDDLEWARE = [
@@ -94,6 +95,7 @@ REST_FRAMEWORK = {
     'SEARCH_PARAM': 'q',
 }
 
+# JWT token configuration
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -117,7 +119,6 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=10),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
-
 
 ROOT_URLCONF = f"{APP_NAME}.urls"
 
