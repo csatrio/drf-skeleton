@@ -8,16 +8,22 @@ from django.conf.urls import url as _url
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import CharField, ForeignKey, ManyToManyField, Q
 from django.db.models.query_utils import DeferredAttribute
-from django_filters import rest_framework as rest_framework_filters
+from django_filters import rest_framework as rest_framework_filters, CharFilter
 from rest_framework import pagination
 from rest_framework import viewsets, generics, filters, mixins, serializers
 from rest_framework.response import Response
 from rest_framework.utils.serializer_helpers import NestedBoundField, BoundField
-
+from common.fields import BinaryTextField
 import common.mixins as serializer_mixin
 import common.reflections as reflections
 
 RELATED_FIELD_CLASS = reflections.get_classes(related_descriptors.__name__)
+
+filter_overrides = {
+    BinaryTextField: {
+        'filter_class' : CharFilter
+    }
+}
 
 
 class BaseView(viewsets.ModelViewSet, generics.ListAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
@@ -220,7 +226,7 @@ def generic_view(_model):
     serializer_attributes = {}
     serializer_meta_attributes = {'model': _model, 'fields': serializer_fields, 'validators': []}
     filter_attributes = {'text_column': text_column}
-    filter_meta_attributes = {'model': _model, 'fields': filter_fields}
+    filter_meta_attributes = {'model': _model, 'fields': filter_fields, 'filter_overrides': filter_overrides}
 
     for field_name, _type in _model.__dict__.items():
         # if it is a primary key field

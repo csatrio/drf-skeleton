@@ -1,6 +1,7 @@
 from django.db import models
 
 from common.models import BaseModel
+from common.fields import BinaryTextField
 
 
 # Create your models here.
@@ -13,3 +14,4 @@ class Person(BaseModel):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     age = models.IntegerField(default=0)
+    stories = BinaryTextField(max_length=None)
