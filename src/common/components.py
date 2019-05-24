@@ -21,7 +21,7 @@ RELATED_FIELD_CLASS = reflections.get_classes(related_descriptors.__name__)
 
 filter_overrides = {
     BinaryTextField: {
-        'filter_class' : CharFilter
+        'filter_class': CharFilter
     }
 }
 

@@ -24,6 +24,9 @@ class Kategori(BaseModel):
 
     nama_kategori = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.nama_kategori
+
 
 class Buku(BaseModel):
     class Meta:
