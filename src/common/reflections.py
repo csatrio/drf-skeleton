@@ -41,7 +41,7 @@ def register_model_admin(model):
         elif type(_type) in RELATED_FIELD_CLASS:
             if '_set' not in field_name: list_fields.append(field_name)
 
-    search_fields += list_fields
+    display_fields = search_fields + list_fields
     model_admin = type(f"{model.__name__}Admin", (admin.ModelAdmin,),
-                       {'list_display': search_fields, 'list_filter': list_fields, 'search_fields': search_fields})
+                       {'list_display': display_fields, 'list_filter': list_fields, 'search_fields': search_fields})
     admin.site.register(model, model_admin)
