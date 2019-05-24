@@ -36,8 +36,8 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     class Meta:
         db_table = 'auth_user'
-        verbose_name = 'AppUser'
-        verbose_name_plural = 'AppUser'
+        verbose_name = 'Application User'
+        verbose_name_plural = 'Appplication Users'
 
     objects = UserManager()
 
