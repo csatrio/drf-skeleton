@@ -5,9 +5,10 @@ from django.db.models.query_utils import DeferredAttribute
 from django_filters import CharFilter
 from rest_framework import viewsets, generics, mixins, serializers
 from rest_framework.utils.serializer_helpers import NestedBoundField, BoundField
-from common.fields import BinaryTextField
+
 import common.mixins as serializer_mixin
 import common.reflections as reflections
+from common.fields import BinaryTextField
 from common.filters import BaseDjangoFilter
 from common.pagination import Pager
 

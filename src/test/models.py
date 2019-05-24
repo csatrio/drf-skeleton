@@ -1,7 +1,7 @@
 from django.db import models
 
-from common.models import BaseModel
 from common.fields import BinaryTextField
+from common.models import BaseModel
 
 
 # Create your models here.
