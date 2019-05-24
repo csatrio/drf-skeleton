@@ -1,21 +1,18 @@
-import itertools
 import os
-from collections import OrderedDict
 
 import django.db.models.fields.related_descriptors as related_descriptors
-from django.conf import settings
 from django.conf.urls import url as _url
 from django.core.exceptions import FieldDoesNotExist
-from django.db.models import CharField, ForeignKey, ManyToManyField, Q
+from django.db.models import CharField, ForeignKey, ManyToManyField
 from django.db.models.query_utils import DeferredAttribute
-from django_filters import rest_framework as rest_framework_filters, CharFilter
-from rest_framework import pagination
-from rest_framework import viewsets, generics, filters, mixins, serializers
-from rest_framework.response import Response
+from django_filters import CharFilter
+from rest_framework import viewsets, generics, mixins, serializers
 from rest_framework.utils.serializer_helpers import NestedBoundField, BoundField
 from common.fields import BinaryTextField
 import common.mixins as serializer_mixin
 import common.reflections as reflections
+from common.filters import BaseDjangoFilter
+from common.pagination import Pager
 
 RELATED_FIELD_CLASS = reflections.get_classes(related_descriptors.__name__)
 
@@ -40,133 +37,6 @@ class BaseSerializer(serializer_mixin.UniqueFieldsMixin, serializer_mixin.Nested
         if isinstance(field, serializers.Serializer):
             return NestedBoundField(field, value, field.data)
         return BoundField(field, value, error)
-
-
-class Pager(pagination.PageNumberPagination):
-    page_size = settings.PAGE_SIZE
-    page_size_query_param = settings.PAGE_SIZE_QUERY_PARAM
-    max_page_size = settings.MAX_PAGE_SIZE
-    per_page = page_size
-
-    # to get query-per-page from request
-    def paginate_queryset(self, queryset, request, view=None):
-        val = request.GET.get(self.page_size_query_param)
-        if val:
-            val = int(val)
-            if val != self.per_page and 0 < val <= self.max_page_size:
-                self.per_page = val
-        return super().paginate_queryset(queryset, request, view)
-
-    def get_paginated_response(self, data):
-        total = self.page.paginator.count
-        per_page = total if self.per_page > total else self.per_page
-        if per_page == 0: per_page = 1
-        total_page = total / per_page
-        str_total_page = (str(total_page)).split('.')[1]
-
-        last_page = int(total_page)
-        if int(str_total_page) > 0: last_page += 1
-
-        start_from = 1 + (self.page.number * per_page) - per_page
-        if start_from < 1: start_from = 1
-
-        end_at = (start_from + per_page) - 1
-        if end_at > total: end_at = total
-
-        if per_page >= total:
-            start_from = 1
-            end_at = total
-
-        return Response(OrderedDict([
-            ('total', total),
-            ('per_page', per_page),
-            ('current_page', self.page.number),
-            ('last_page', last_page),
-            ('next_page_url', self.get_next_link()),
-            ('prev_page_url', self.get_previous_link()),
-            ('from', start_from),
-            ('to', end_at),
-            ('rows', data)
-        ]))
-
-
-class BaseDjangoFilter(filters.OrderingFilter, rest_framework_filters.FilterSet):
-    text_column = ()
-    id_column = 'id'
-
-    def filter_queryset(self, request, queryset, view):
-        req = request.GET.copy()
-        q = req.get('q')
-        _queryset = None
-        ordering_q = req.get('ordering')
-
-        # if it has these keys, remove it so it will not processed by next step of the filter
-        BaseDjangoFilter.delete_key_if_exists(req, 'q', 'ordering', 'page', 'format', settings.PAGE_SIZE_QUERY_PARAM)
-
-        if q is not None:
-            _queryset = BaseDjangoFilter.filter_q(queryset, self.text_column, q)
-        elif req.get(self.id_column) is None:
-            _queryset = BaseDjangoFilter.do_filter(req, self.text_column, queryset)
-        else:
-            _queryset = queryset.filter(id=req[self.id_column])
-
-        # if it has ordering query, return filtered queryset
-        if ordering_q:
-            fields = [param.strip() for param in ordering_q.split(',')]
-            ordering = self.remove_invalid_fields(_queryset, fields, view, request)
-            if ordering:
-                return _queryset.order_by(*ordering)
-
-        return _queryset
-
-    # for any http query that use 'q='
-    @staticmethod
-    def filter_q(queryset, search_field, value):
-
-        if value:
-            q_parts = value.split()
-
-            # Permutation code copied from http://stackoverflow.com/a/12935562/119071
-
-            list1 = search_field
-            list2 = q_parts
-
-            perms = [zip(x, list2) for x in itertools.permutations(list1, len(list2))]
-
-            q_totals = Q()
-            for perm in perms:
-                q_part = Q()
-                for p in perm:
-                    q_part = q_part & Q(**{p[0] + '__icontains': p[1]})
-                q_totals = q_totals | q_part
-
-            queryset = queryset.filter(q_totals)
-        return queryset
-
-    # for any http get query, can be used with orm flags
-    @staticmethod
-    def do_filter(request, params, queryset):
-        filter_list = []
-        for key, value in request.items():
-            # if key is not a text column
-            if key not in params:
-                filter_key = {key: value}
-            # if key is a text column, search with contains option
-            else:
-                filter_key = {f"{key}__icontains": value}
-
-            if filter_list:
-                filter_list.append(filter_list[-1].filter(**filter_key))
-            else:
-                filter_list.append(queryset.filter(**filter_key))
-
-        return filter_list[-1] if len(filter_list) else queryset.filter()
-
-    @staticmethod
-    def delete_key_if_exists(req, *args):
-        for key in args:
-            if req.get(key):
-                del req[key]
 
 
 def nested_serializer(_model, related_fields=None):
