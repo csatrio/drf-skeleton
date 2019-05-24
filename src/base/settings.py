@@ -29,23 +29,23 @@ ADMIN_URL = 'api_admin'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Name of application
-APP_NAME = 'drf-skeleton'
+APP_NAME = 'DRF-Skeleton'
 
 APP_MODULE_BASE = os.path.dirname(os.path.abspath(__file__)).replace(os.getcwd(), '').replace(os.sep, '').strip()
 
 # Auto generated list of application modules
 APP_MODULES = [file for file in os.listdir(os.getcwd()) if
-               '.' not in file and APP_MODULE_BASE not in file and 'common' and 'users' not in file
+               '.' not in file and APP_MODULE_BASE not in file and 'common' and 'appuser' not in file
                and 'templates' not in file and 'administration' not in file] if DEBUG else \
     [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_MODULE_BASE not in file
-     and 'test' not in file and 'common' not in file and 'templates' not in file and 'users' not in file
+     and 'test' not in file and 'common' not in file and 'templates' not in file and 'appuser' not in file
      and 'administration' not in file]
 
 # Store classes created by reflection, avoid high overhead by repeated reflection call
 CLASS_CACHE = {}
 
 # User settings
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'appuser.User'
 
 # Pagination Settings
 PAGE_SIZE = 10
@@ -73,7 +73,7 @@ INSTALLED_APPS = [
                      'django.contrib.humanize',
                      'rest_framework',
                      'django_filters',
-                     'users',
+                     'appuser',
                      'administration.apps.AdminConfig',
                  ] + [module for module in APP_MODULES]
 
