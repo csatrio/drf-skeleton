@@ -14,7 +14,6 @@ class AdminSite(BaseAdminSite):
         For sites running on a subpath, use the SCRIPT_NAME value if site_url
         hasn't been customized.
         """
-        print(self.get_app_list(request))
         script_name = request.META['SCRIPT_NAME']
         site_url = script_name if self.site_url == '/' and script_name else self.site_url
         return {
