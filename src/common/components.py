@@ -1,7 +1,4 @@
-import os
-
 import django.db.models.fields.related_descriptors as related_descriptors
-from django.conf.urls import url as _url
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import CharField, ForeignKey, ManyToManyField
 from django.db.models.query_utils import DeferredAttribute
@@ -160,12 +157,3 @@ def generic_view(_model):
     }
     view_set_class = reflections.create_class(view_set_class_name, (BaseView,), view_set_attributes)
     return view_set_class
-
-
-def child_url_resolver(_file):
-    current_folder = os.path.dirname(os.path.abspath(_file)).replace(os.getcwd(), '').replace(os.sep, '').strip()
-
-    def url(*args):
-        return _url(f"{current_folder}/{args[0]}", args[1])
-
-    return url
