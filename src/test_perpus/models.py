@@ -1,6 +1,6 @@
 from django.db import models, transaction
 
-from common.models import BaseModel
+from common.models import BaseModel, RelatedManager
 
 
 # Create your models here.
@@ -48,6 +48,7 @@ class Sewa(BaseModel):
     anggota = models.ForeignKey(Anggota, on_delete=models.DO_NOTHING)
     tanggal_pinjam = models.DateField()
     tanggal_kembali = models.DateField()
+    objects = RelatedManager('anggota')
 
     def delete(self, using=None, keep_parents=False):
         with transaction.atomic():

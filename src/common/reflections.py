@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import admin
 from django import forms
 from django.db.models.query_utils import DeferredAttribute
+from test_perpus.models import *
 
 
 def create_class(_name: str, _superclasses: tuple, _attributes: dict):
@@ -36,6 +37,12 @@ class CustomForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CustomForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == 'sewa' and hasattr(field, 'queryset'):
+                for field_name, _type in field.queryset.model.__dict__.items():
+                    if type(_type) in RELATED_FIELD_CLASS:
+                        if '_set' not in field_name:
+                            field.queryset = field.queryset.select_related(field_name)
 
 
 class CustomAdmin(admin.ModelAdmin):
@@ -81,6 +88,6 @@ def register_model_admin(model):
                         'list_filter': list_fields,
                         'list_select_related': tuple(related_fields),
                         'search_fields': search_fields,
-                        'related_fields': related_fields
+                        'related_fields': related_fields,
                         })
     admin.site.register(model, model_admin)
