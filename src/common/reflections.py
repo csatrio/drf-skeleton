@@ -45,7 +45,6 @@ class CustomForm(forms.ModelForm):
 
 
 class CustomAdmin(admin.ModelAdmin):
-    isOptimizePrefetch = False
     form = CustomForm
 
     def get_queryset(self, request):
