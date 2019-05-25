@@ -95,8 +95,8 @@ class CustomAdmin(admin.ModelAdmin):
                     for changed_field in changed_fields:
                         old = getattr(old_object, changed_field)
                         new = getattr(new_object, changed_field)
-                        changes['old_values'].append(old)
-                        changes['new_values'].append(new)
+                        changes['old_values'].append(str(old))
+                        changes['new_values'].append(str(new))
                 self.save_model(request, new_object, form, not add)
                 self.save_related(request, form, formsets, not add)
 
