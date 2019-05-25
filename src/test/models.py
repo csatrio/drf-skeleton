@@ -15,3 +15,6 @@ class Person(BaseModel):
     address = models.CharField(max_length=255)
     age = models.IntegerField(default=0)
     stories = BinaryTextField(max_length=None)
+
+    def __str__(self):
+        return self.name

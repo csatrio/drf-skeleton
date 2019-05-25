@@ -3,8 +3,8 @@ import sys
 import django.db.models.fields.related_descriptors as related_descriptors
 from django.conf import settings
 from django.contrib import admin
-from django import forms
 from django.db.models.query_utils import DeferredAttribute
+from common.admin import CustomForm, CustomAdmin
 
 
 def create_class(_name: str, _superclasses: tuple, _attributes: dict):
@@ -30,27 +30,6 @@ def get_model_fields(_model):
 
 
 RELATED_FIELD_CLASS = get_classes(related_descriptors.__name__)
-
-
-class CustomForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(CustomForm, self).__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            if hasattr(field, 'queryset'):
-                for field_name, _type in field.queryset.model.__dict__.items():
-                    if type(_type) in RELATED_FIELD_CLASS:
-                        if '_set' not in field_name:
-                            field.queryset = field.queryset.select_related(field_name)
-
-
-class CustomAdmin(admin.ModelAdmin):
-    form = CustomForm
-
-    def get_queryset(self, request):
-        qs = super(CustomAdmin, self).get_queryset(request)
-        qs = qs.select_related(*self.related_fields)
-        return qs
 
 
 def lookup_related_field(model, model_name, related_fields):
