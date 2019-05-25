@@ -50,7 +50,7 @@ for module in settings.APP_MODULES:
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)
             # create admin entry for each model
-            reflections.register_model_admin(model)
+            reflections.register_model_admin(model, model_classes=model_classes)
         secondary_urls.append(url(f"^{API_PREFIX}/{module}/", include(secondary_router.urls)))
     except AttributeError:
         pass

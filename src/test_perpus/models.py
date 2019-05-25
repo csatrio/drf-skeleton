@@ -49,6 +49,7 @@ class Sewa(BaseModel):
     tanggal_pinjam = models.DateField()
     tanggal_kembali = models.DateField()
     objects = RelatedManager('anggota')
+    inlines = ['DetilSewa']
 
     def delete(self, using=None, keep_parents=False):
         with transaction.atomic():
@@ -67,3 +68,7 @@ class DetilSewa(BaseModel):
     sewa = models.ForeignKey(Sewa, on_delete=models.DO_NOTHING)
     buku = models.ForeignKey(Buku, on_delete=models.DO_NOTHING)
     jumlah = models.IntegerField(default=0)
+    objects = RelatedManager('buku')
+
+    def __str__(self):
+        return f"Jumlah Pinjam: {self.jumlah}"

@@ -64,7 +64,16 @@ def lookup_related_field(model, model_name, related_fields):
                 lookup_related_field(related_model, related_field_name, related_fields)
 
 
-def register_model_admin(model):
+def lookup_model_classes(name, model_classes):
+    if model_classes is None:
+        return None
+    for model in model_classes:
+        if model.__name__ == name:
+            return model
+    return None
+
+
+def register_model_admin(model, model_classes=None):
     search_fields = []
     list_fields = []
     related_fields = set()
@@ -81,11 +90,25 @@ def register_model_admin(model):
                 lookup_related_field(related_model, field_name, related_fields)
 
     display_fields = search_fields + list_fields
-    model_admin = type(f"{model.__name__}Admin", (CustomAdmin,),
-                       {'list_display': display_fields,
-                        'list_filter': list_fields,
-                        'list_select_related': tuple(related_fields),
-                        'search_fields': search_fields,
-                        'related_fields': related_fields,
-                        })
+    model_admin_attributes = {'list_display': display_fields,
+                              'list_filter': list_fields,
+                              'list_select_related': tuple(related_fields),
+                              'search_fields': search_fields,
+                              'related_fields': related_fields,
+                              }
+
+    try:
+        inline_models = getattr(model, 'inlines')
+        inlines = []
+        for model_name in inline_models:
+            inline_model = lookup_model_classes(model_name, model_classes)
+            if inline_model:
+                inline = create_class(f"{inline_model.__name__}Inline", (admin.TabularInline,),
+                                      {'model': inline_model, 'forms': CustomForm})
+                inlines.append(inline)
+        model_admin_attributes['inlines'] = inlines
+    except Exception:
+        pass
+
+    model_admin = type(f"{model.__name__}Admin", (CustomAdmin,), model_admin_attributes)
     admin.site.register(model, model_admin)
