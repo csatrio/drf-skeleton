@@ -5,10 +5,10 @@ class RelatedManager(models.Manager):
 
     def __init__(self, *args):
         super(RelatedManager, self).__init__()
-        self.related_fields = args if args is not None else []
+        self.related_fields = args
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super(RelatedManager, self).get_queryset()
         if self.related_fields:
             qs = qs.select_related(*self.related_fields)
         return qs
