@@ -75,7 +75,7 @@ INSTALLED_APPS = [
                      'django_filters',
                      'appuser',
                      'administration.apps.AdminConfig',
-                 ] + [module for module in APP_MODULES]
+                 ] + APP_MODULES
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
