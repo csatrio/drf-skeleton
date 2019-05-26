@@ -85,20 +85,30 @@ class CustomAdmin(admin.ModelAdmin):
             formsets, inline_instances = self._create_formsets(request, new_object, change=not add)
             # on update
             if all_valid(formsets) and form_validated:
-                change_message = self.construct_change_message(request, form, formsets, add)
-                if len(change_message) > 0:
+                try:
+                    # must not fail when there's an error getting the old object
                     old_object = new_object.__class__.objects.get(pk=new_object.pk)
-                    changes = change_message[0]['changed']
-                    changes['old_values'] = []
-                    changes['new_values'] = []
-                    changed_fields = changes['fields']
-                    for changed_field in changed_fields:
-                        old = getattr(old_object, changed_field)
-                        new = getattr(new_object, changed_field)
-                        changes['old_values'].append(str(old))
-                        changes['new_values'].append(str(new))
+                except Exception:
+                    pass
                 self.save_model(request, new_object, form, not add)
                 self.save_related(request, form, formsets, not add)
+                change_message = self.construct_change_message(request, form, formsets, add)
+
+                if len(change_message) > 0:
+                    changes = change_message[0].get('changed')
+                    if changes:
+                        changes['old_values'] = []
+                        changes['new_values'] = []
+                        changed_fields = changes['fields']
+                        for changed_field in changed_fields:
+                            try:
+                                # when we failed to get the old object or there's an error, silently continue
+                                old = getattr(old_object, changed_field)
+                                new = getattr(new_object, changed_field)
+                                changes['old_values'].append(str(old))
+                                changes['new_values'].append(str(new))
+                            except Exception:
+                                pass
 
                 if add:
                     self.log_addition(request, new_object, change_message)
