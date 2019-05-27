@@ -36,10 +36,10 @@ APP_MODULE_BASE = os.path.dirname(os.path.abspath(__file__)).replace(os.getcwd()
 # Auto generated list of application modules
 APP_MODULES = [file for file in os.listdir(os.getcwd()) if
                '.' not in file and APP_MODULE_BASE not in file and 'common' and 'appuser' not in file
-               and 'templates' not in file and 'administration' not in file] if DEBUG else \
+               and 'templates' not in file and 'administration' not in file and 'static' not in file] if DEBUG else \
     [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_MODULE_BASE not in file
      and 'test' not in file and 'common' not in file and 'templates' not in file and 'appuser' not in file
-     and 'administration' not in file]
+     and 'administration' not in file and 'static' not in file]
 
 # Store classes created by reflection, avoid high overhead by repeated reflection call
 CLASS_CACHE = {}
