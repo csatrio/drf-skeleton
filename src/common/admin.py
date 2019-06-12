@@ -2,6 +2,7 @@ import inspect
 import json
 import sys
 
+from base import settings
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import helpers
@@ -44,6 +45,16 @@ class CustomAdmin(admin.ModelAdmin):
         qs = super(CustomAdmin, self).get_queryset(request)
         qs = qs.select_related(*self.related_fields)
         return qs
+
+    @property
+    def media(self):
+        extra = '' if settings.DEBUG else '.min'
+        js = ['bootstrap/jquery.min.js']
+        if self.filter_vertical or self.filter_horizontal:
+            js.extend(['SelectBox.js', 'SelectFilter2.js'])
+        if self.classes and 'collapse' in self.classes:
+            js.append('collapse%s.js' % extra)
+        return forms.Media(js=['admin/js/%s' % url for url in js])
 
     # override this to enable tracking old and new value
     def _changeform_view(self, request, object_id, form_url, extra_context):
