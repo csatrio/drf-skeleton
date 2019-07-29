@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import importlib
 from datetime import timedelta
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -33,13 +34,14 @@ APP_NAME = 'DRF-Skeleton'
 
 APP_MODULE_BASE = os.path.dirname(os.path.abspath(__file__)).replace(os.getcwd(), '').replace(os.sep, '').strip()
 
+# excluded module and file name pattern
+helper = importlib.import_module(f"{APP_MODULE_BASE}.settings_helper")
+
+EXCLUSION_DEBUG = [APP_MODULE_BASE, 'common', 'appuser', 'templates', 'administration', 'static', '.']
+EXCLUSION_LIST = EXCLUSION_DEBUG if DEBUG else EXCLUSION_DEBUG + ['test']
+
 # Auto generated list of application modules
-APP_MODULES = [file for file in os.listdir(os.getcwd()) if
-               '.' not in file and APP_MODULE_BASE not in file and 'common' and 'appuser' not in file
-               and 'templates' not in file and 'administration' not in file and 'static' not in file] if DEBUG else \
-    [file for file in os.listdir(os.getcwd()) if '.' not in file and APP_MODULE_BASE not in file
-     and 'test' not in file and 'common' not in file and 'templates' not in file and 'appuser' not in file
-     and 'administration' not in file and 'static' not in file]
+APP_MODULES = [file for file in os.listdir(os.getcwd()) if helper.check_exclusion(file, EXCLUSION_LIST)]
 
 # Store classes created by reflection, avoid high overhead by repeated reflection call
 CLASS_CACHE = {}
