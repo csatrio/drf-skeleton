@@ -1,4 +1,5 @@
 import django.db.models.fields.related_descriptors as related_descriptors
+import django.db.models.fields.files as file_fields
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import CharField, ForeignKey, ManyToManyField
 from django.db.models.query_utils import DeferredAttribute
@@ -44,16 +45,17 @@ def nested_serializer(_model, related_fields=None):
     serializer_meta_attributes = {'model': _model, 'fields': serializer_fields, 'validators': []}
 
     for field_name, _type in _model.__dict__.items():
+        type_class = type(_type)
         # if it is a primary key field
         # if field_name == 'id':
         #     continue
 
         # if it is a model field
-        if type(_type) == DeferredAttribute:
+        if type_class == DeferredAttribute:
             serializer_fields.append(field_name)
 
         # if it is a related field, create nested serializer
-        elif type(_type) in RELATED_FIELD_CLASS:
+        elif type_class in RELATED_FIELD_CLASS:
             try:
                 field = _model._meta.get_field(field_name)
                 field_type = type(field)
@@ -97,12 +99,13 @@ def generic_view(_model):
     filter_meta_attributes = {'model': _model, 'fields': filter_fields, 'filter_overrides': filter_overrides}
 
     for field_name, _type in _model.__dict__.items():
+        type_class = type(_type)
         # if it is a primary key field
         if field_name == 'id':
             serializer_attributes[field_name] = serializers.IntegerField(required=False)
 
         # model field that is directly inside one table
-        if type(_type) == DeferredAttribute:
+        if type_class == DeferredAttribute:
             field = _model._meta.get_field(field_name)
             field_type = type(field)
             serializer_fields.append(field_name)
@@ -111,8 +114,11 @@ def generic_view(_model):
             if field_type == CharField:
                 text_column.append(field_name)
 
+        if type_class == file_fields.ImageFileDescriptor:
+            serializer_fields.append(field_name)
+
         # if it is a related field on another table, create nested serializer
-        elif type(_type) in RELATED_FIELD_CLASS:
+        elif type_class in RELATED_FIELD_CLASS:
             try:
                 field = _model._meta.get_field(field_name)
                 field_type = type(field)
