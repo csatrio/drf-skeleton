@@ -47,7 +47,6 @@ for module in settings.APP_MODULES:
             except AttributeError:
                 pass
             optimize_select_related = True if not hasattr(model, 'optimize_select_related') else model.optimize_select_related
-            print(optimize_select_related)
             view_class = generic_view(model, optimize_select_related=optimize_select_related)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)
