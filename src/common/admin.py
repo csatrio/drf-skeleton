@@ -16,6 +16,7 @@ from django.forms import all_valid
 from django.template.response import TemplateResponse
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
+from django.core.exceptions import FieldError
 
 
 def get_classes(_name):
@@ -39,11 +40,16 @@ class CustomForm(forms.ModelForm):
 
 
 class CustomAdmin(admin.ModelAdmin):
+    optimize_select_related = False
     form = CustomForm
 
     def get_queryset(self, request):
         qs = super(CustomAdmin, self).get_queryset(request)
-        qs = qs.select_related(*self.related_fields)
+        if self.optimize_select_related and hasattr(self, 'related_fields'):
+            try:
+                qs = qs.select_related(*self.related_fields)
+            except FieldError:
+                pass
         return qs
 
     @property

@@ -5,7 +5,7 @@ import django.db.models.fields.related_descriptors as related_descriptors
 from django.conf import settings
 from django.contrib import admin
 from django.db.models.query_utils import DeferredAttribute
-
+from django import forms
 from common.admin import CustomForm, CustomAdmin
 
 
@@ -32,9 +32,13 @@ def get_model_fields(_model):
 
 
 RELATED_FIELD_CLASS = get_classes(related_descriptors.__name__)
+RELATED_FIELD_MAX_RECURSION = 10
 
 
-def lookup_related_field(model, model_name, related_fields):
+def lookup_related_field(model, model_name, related_fields, recursion_depth=0):
+    recursion_depth += 1
+    if recursion_depth > RELATED_FIELD_MAX_RECURSION:
+        return
     for field_name, _type in model.__dict__.items():
         if type(_type) in RELATED_FIELD_CLASS:
             if '_set' not in field_name:
@@ -42,7 +46,7 @@ def lookup_related_field(model, model_name, related_fields):
                 related_field_name = f"{model_name}__{field_name}"
                 related_fields.add(related_field_name)
                 related_model = field.related_model
-                lookup_related_field(related_model, related_field_name, related_fields)
+                lookup_related_field(related_model, related_field_name, related_fields, recursion_depth)
 
 
 def lookup_model_classes(name, model_classes):
@@ -54,7 +58,7 @@ def lookup_model_classes(name, model_classes):
     return None
 
 
-def register_model_admin(model, model_classes=None):
+def register_model_admin(model, model_classes=None, optimize_select_related=True):
     search_fields = []
     list_fields = []
     related_fields = set()
@@ -62,21 +66,26 @@ def register_model_admin(model, model_classes=None):
     for field_name, _type in model.__dict__.items():
         if type(_type) == DeferredAttribute:
             if 'id' not in field_name: search_fields.append(field_name)
-        elif type(_type) in RELATED_FIELD_CLASS:
-            if '_set' not in field_name:
-                list_fields.append(field_name)
-                field = model._meta.get_field(field_name)
-                related_fields.add(field_name)
-                related_model = field.related_model
-                lookup_related_field(related_model, field_name, related_fields)
+        if optimize_select_related:
+            if type(_type) in RELATED_FIELD_CLASS:
+                if '_set' not in field_name:
+                    list_fields.append(field_name)
+                    field = model._meta.get_field(field_name)
+                    related_fields.add(field_name)
+                    related_model = field.related_model
+                    lookup_related_field(related_model, field_name, related_fields)
 
+    _forms = CustomForm if optimize_select_related else forms.ModelForm
     display_fields = search_fields + list_fields
     model_admin_attributes = {'list_display': display_fields,
                               'list_filter': list_fields,
                               'list_select_related': tuple(related_fields),
                               'search_fields': search_fields,
-                              'related_fields': related_fields,
+                              'form': _forms,
+                              'optimize_select_related': optimize_select_related
                               }
+    if optimize_select_related:
+        model_admin_attributes['related_fields'] = related_fields
 
     try:
         inline_models = getattr(model, 'inlines')
@@ -85,7 +94,7 @@ def register_model_admin(model, model_classes=None):
             inline_model = lookup_model_classes(model_name, model_classes)
             if inline_model:
                 inline = create_class(f"{inline_model.__name__}Inline", (admin.TabularInline,),
-                                      {'model': inline_model, 'forms': CustomForm})
+                                      {'model': inline_model, 'forms': _forms})
                 inlines.append(inline)
         model_admin_attributes['inlines'] = inlines
     except Exception:
