@@ -46,11 +46,13 @@ for module in settings.APP_MODULES:
                     continue
             except AttributeError:
                 pass
-            view_class = generic_view(model)
+            optimize_select_related = True if not hasattr(model, 'optimize_select_related') else model.optimize_select_related
+            print(optimize_select_related)
+            view_class = generic_view(model, optimize_select_related=optimize_select_related)
             router.register(f"{module}/{model.__name__.lower()}", view_class)
             secondary_router.register(model.__name__.lower(), view_class)
             # create admin entry for each model
-            reflections.register_model_admin(model, model_classes=model_classes)
+            reflections.register_model_admin(model, model_classes=model_classes, optimize_select_related=optimize_select_related)
         secondary_urls.append(url(f"^{API_PREFIX}/{module}/", include(secondary_router.urls)))
     except AttributeError:
         pass

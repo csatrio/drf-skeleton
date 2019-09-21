@@ -83,7 +83,7 @@ def nested_serializer(_model, related_fields=None):
     return serializer_class
 
 
-def generic_view(_model):
+def generic_view(_model, optimize_select_related=True):
     view_set_class_name = f"{_model.__name__}ViewSet"
     cached_class = reflections.get_cached_class(view_set_class_name)
     if cached_class:
@@ -151,7 +151,7 @@ def generic_view(_model):
     qs = _model.objects.all()
 
     # optimize prefetch for related fields
-    if len(related_fields) > 0:
+    if optimize_select_related and len(related_fields) > 0:
         qs = qs.select_related(*related_fields)
 
     view_set_attributes = {
